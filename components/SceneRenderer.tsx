@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import * as React from 'react';
 // @ts-ignore
@@ -21,6 +21,7 @@ try {
 
 interface SceneRendererProps {
   sceneCode: string;
+  onFixRequest?: (code: string, errorDetails: string) => Promise<void>;
 }
 
 // Default scene component shown when no code is generated yet
@@ -197,9 +198,74 @@ function processCode(rawCode: string): string {
   }
 }
 
-export default function SceneRenderer({ sceneCode }: SceneRendererProps) {
+// Custom error boundary component that catches Three.js runtime errors
+class ErrorBoundary extends React.Component<
+  { 
+    children: React.ReactNode; 
+    fallback: React.ReactNode;
+    onError: (error: Error, errorInfo: React.ErrorInfo) => void;
+    resetKey?: any; // Add a resetKey prop to force reset
+  }, 
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    this.props.onError(error, errorInfo);
+  }
+
+  // Reset the error state when resetKey changes
+  componentDidUpdate(prevProps: any) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+export default function SceneRenderer({ sceneCode, onFixRequest }: SceneRendererProps) {
   const [error, setError] = useState<string | null>(null);
+  const [runtimeError, setRuntimeError] = useState<{error: Error | null, errorInfo?: any}>({ error: null });
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Generate a unique key for the Canvas based on code content
+  // This forces the Canvas to remount completely when code changes
+  const canvasKey = useMemo(() => `canvas-${Date.now()}-${sceneCode.length}`, [sceneCode]);
+  
+  // Reset key for error boundary - changes when sceneCode changes
+  const resetKey = useMemo(() => sceneCode, [sceneCode]);
+  
+  // Handle errors caught by the error boundary
+  const handleRuntimeError = useCallback((error: Error, errorInfo: React.ErrorInfo) => {
+    console.error('Runtime error caught by boundary:', error, errorInfo);
+    setRuntimeError({ error, errorInfo });
+  }, []);
+
+  // Handle fix request
+  const handleFixClick = useCallback(async () => {
+    if (sceneCode && runtimeError.error && onFixRequest) {
+      // Format error details
+      const errorDetails = `
+Error: ${runtimeError.error.message}
+Stack: ${runtimeError.error.stack}
+${runtimeError.errorInfo ? `Component Stack: ${runtimeError.errorInfo.componentStack}` : ''}
+`;
+      await onFixRequest(sceneCode, errorDetails);
+    }
+  }, [sceneCode, runtimeError, onFixRequest]);
   
   // Create the dynamic component when code changes
   const DynamicComponent = useMemo(() => {
@@ -212,6 +278,7 @@ export default function SceneRenderer({ sceneCode }: SceneRendererProps) {
       const processedCode = processCode(sceneCode);
       const component = createComponentFromCode(processedCode);
       setError(null);
+      setRuntimeError({ error: null });
       return component;
     } catch (err: any) {
       console.error('Failed to create scene:', err);
@@ -230,15 +297,42 @@ export default function SceneRenderer({ sceneCode }: SceneRendererProps) {
         </div>
       )}
       
+      {runtimeError.error && (
+        <div className="absolute top-0 left-0 right-0 bg-red-600 text-white p-2 z-10 flex justify-between items-center">
+          <div>
+            <div className="font-bold">Three.js Runtime Error:</div>
+            <div>{runtimeError.error.message}</div>
+          </div>
+          {onFixRequest && (
+            <button 
+              onClick={handleFixClick}
+              className="bg-white text-red-600 px-4 py-1 rounded hover:bg-gray-200 font-medium"
+            >
+              Fix with AI
+            </button>
+          )}
+        </div>
+      )}
+      
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
           <div className="text-white">Loading scene...</div>
         </div>
       )}
       
-      <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
+      <Canvas key={canvasKey} camera={{ position: [3, 3, 3], fov: 50 }}>
         <Suspense fallback={null}>
-          {DynamicComponent ? <DynamicComponent /> : <DefaultScene />}
+          {DynamicComponent ? (
+            <ErrorBoundary 
+              fallback={<ErrorScene />} 
+              onError={handleRuntimeError}
+              resetKey={resetKey}
+            >
+              <DynamicComponent />
+            </ErrorBoundary>
+          ) : (
+            <DefaultScene />
+          )}
           <OrbitControls />
         </Suspense>
       </Canvas>
