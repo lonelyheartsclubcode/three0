@@ -25,10 +25,15 @@ export default function Page() {
       }
       
       const data = await response.json();
+      
+      // Small delay to ensure smooth transition when loading the preview
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       setSceneCode(data.code);
     } catch (error) {
       console.error('Error generating scene:', error);
     } finally {
+      // Loading state is now handled by Sandpack internally
       setIsLoading(false);
     }
   };

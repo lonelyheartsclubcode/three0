@@ -8,6 +8,8 @@ Three0 is an AI-powered tool that generates 3D scenes using natural language. Th
 - Powered by OpenAI's GPT models (using gpt-4.1-mini)
 - Real-time 3D preview with React Three Fiber
 - View the generated code with syntax highlighting
+- Self-correcting AI that can fix broken scenes automatically
+- Sandboxed code execution for safety and reliability
 - Simple and intuitive UI
 
 ## 🔧 Tech Stack
@@ -18,6 +20,8 @@ Three0 is an AI-powered tool that generates 3D scenes using natural language. Th
 - **Tailwind CSS** for styling
 - **OpenAI API** for LLM scene generation
 - **Zustand** for state management
+- **Sandpack** from CodeSandbox for secure code previews
+- **React-Syntax-Highlighter** for code display
 
 ## 🏃‍♀️ Getting Started
 
@@ -36,16 +40,25 @@ OPENAI_MODEL=gpt-4.1-mini
 1. Enter a natural language prompt describing the 3D scene you want to create
 2. Click "Generate Scene"
 3. View the 3D preview in the right panel
-4. Toggle between "Preview" and "Code" tabs to see the generated code
-5. Copy the code to use in your own projects
+4. If the scene has errors, the AI will automatically attempt to fix them
+5. Toggle between "Preview" and "Code" tabs to see the generated code
+6. Copy the code to use in your own projects
+
+## 🔒 Security and Safety
+
+Three0 uses Sandpack to run generated code in an isolated iframe, ensuring:
+- Complete isolation from the main application
+- Protection from malicious code execution
+- Reliable error handling and reporting
+- Consistent preview rendering
 
 ## 🔨 Next Steps
 
-- Implement secure code execution for dynamic scene previews
 - Add the ability to edit generated code and see changes live
 - Implement export functionality for downloading scenes
 - Add user authentication and saved scenes
 - Create a gallery of example scenes
+- Add more complex scene types and templates
 
 ## 📄 License
 
