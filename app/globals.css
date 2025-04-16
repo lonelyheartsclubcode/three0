@@ -81,4 +81,32 @@ body {
 /* Code editor should also take full height */
 .sp-code-editor {
   height: 100% !important;
+}
+
+/* Force high contrast text for code editor */
+.sp-code-editor .cm-content,
+.sp-code-editor .cm-line {
+  color: white !important;
+}
+
+.sp-code-editor .cm-keyword,
+.sp-code-editor .cm-tag {
+  color: #93c5fd !important; /* blue-300 */
+}
+
+.sp-code-editor .cm-def,
+.sp-code-editor .cm-property {
+  color: #a5b4fc !important; /* indigo-300 */
+}
+
+.sp-code-editor .cm-string {
+  color: #86efac !important; /* green-300 */
+}
+
+.sp-code-editor .cm-comment {
+  color: #a1a1aa !important; /* zinc-400 */
+}
+
+.sp-code-editor .cm-number {
+  color: #fdba74 !important; /* orange-300 */
 } 

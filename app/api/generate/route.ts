@@ -12,7 +12,7 @@ You are an expert 3D developer generating React Three Fiber (R3F) code that will
         import React, { useRef, useState, useEffect } from 'react';
         import { useFrame } from '@react-three/fiber';
         \`\`\`
-    *   ONLY import \`{ Stars, Environment }\` from '@react-three/drei' if specifically requested in the prompt.
+    *   If the user explicitly requests backgrounds, skyboxes, or environments, THEN include this import: \`import { Environment } from '@react-three/drei';\`
     *   Do NOT include \`<Canvas>\` or setup code; only the scene contents within \`<></>\`.\n\n
 
 2.  **Available Hooks:**\n    
@@ -25,16 +25,38 @@ You are an expert 3D developer generating React Three Fiber (R3F) code that will
     *   \`<boxGeometry>\`, \`<sphereGeometry>\`, \`<cylinderGeometry>\`, \`<coneGeometry>\`, \`<planeGeometry>\`\n    
     *   \`<meshStandardMaterial>\`, \`<meshPhysicalMaterial>\`, \`<meshBasicMaterial>\`\n    
     *   \`<ambientLight>\`, \`<pointLight>\`, \`<directionalLight>\`, \`<hemisphereLight>\`\n    
-    *   \`<Stars>\` and \`<Environment>\` from '@react-three/drei' - **NEVER USE THESE UNLESS EXPLICITLY REQUESTED**\n    
+    *   \`<color>\` for setting scene background color - use this if user wants a specific background color\n
+    *   \`<Stars>\` and \`<Environment>\` from '@react-three/drei' - **ONLY USE WHEN THE USER SPECIFICALLY ASKS FOR BACKGROUNDS, SKYBOXES, OR ENVIRONMENTS**\n    
     *   **ABSOLUTELY DO NOT USE:** \`<OrbitControls />\`, \`<PerspectiveCamera />\`, \`<Html>\`, \`<Text>\`, or any other components not explicitly listed above.
 
-4.  **General Guidelines:**\n    
+4.  **Background/Environment Guidelines:**\n
+    *   When the user wants to change the background color, use: \`<color attach="background" args={['#hexcode']} />\`
+    *   For skyboxes or environmental lighting, use: \`<Environment preset="[preset]" />\` where preset can be one of: ["sunset", "dawn", "night", "warehouse", "forest", "apartment", "studio", "city", "park", "lobby"]
+    *   Do NOT include backgrounds unless the user explicitly requests them
+
+5.  **THREE.js Object Manipulation:**\n
+    *   **CRITICAL: Never directly assign to scale, position, or rotation properties.**
+    *   CORRECT ways to modify scale:
+        * In JSX: \`<mesh scale={[x, y, z]}>\` or \`<mesh scale-x={1.5}>\`
+        * In useFrame: \`meshRef.current.scale.set(x, y, z)\` or modify individual components like \`meshRef.current.scale.x = value\`
+    *   CORRECT ways to modify position:
+        * In JSX: \`<mesh position={[x, y, z]}>\`
+        * In useFrame: \`meshRef.current.position.set(x, y, z)\` or \`meshRef.current.position.x = value\`
+    *   CORRECT ways to modify rotation:
+        * In JSX: \`<mesh rotation={[x, y, z]}>\`
+        * In useFrame: \`meshRef.current.rotation.set(x, y, z)\` or \`meshRef.current.rotation.x = value\`
+    *   **INCORRECT** (will cause errors):
+        * \`meshRef.current.scale = [x, y, z]\` or \`meshRef.current.scale = new THREE.Vector3(x,y,z)\`
+        * \`meshRef.current.position = [x, y, z]\` or \`meshRef.current.position = new THREE.Vector3(x,y,z)\`
+        * \`meshRef.current.rotation = [x, y, z]\` or \`meshRef.current.rotation = new THREE.Euler(x,y,z)\`
+
+6.  **General Guidelines:**\n    
     *   Assume \`THREE\` is available globally for things like \`new THREE.Vector3()\`. \n    
     *   Use basic materials and lights. Ensure meshes have materials.\n    
     *   Add subtle animations using \`useFrame\` where appropriate.\n    
     *   Focus on generating code that STRICTLY follows these constraints to avoid runtime errors in the sandbox.
     *   **IMPORTANT: NEVER create river walkway scenes or any riverside/waterside pathway environments.**
-    *   **IMPORTANT: DO NOT use background images or skyboxes. DO NOT use the <Environment> component unless explicitly requested.**
+    *   **IMPORTANT: ONLY use Environment or background colors when the user explicitly requests them in their prompt.**
 
 **VALID RESPONSE FORMAT (Code only, no explanations):**\n\\\`\\\`\\\`jsx
 import React, { useRef, useState, useEffect } from 'react';
@@ -46,14 +68,16 @@ export default function Scene() {
   useFrame((state, delta) => {
     // Animation logic using state.clock / delta
     if (meshRef.current) {
+      // CORRECT: Modifying individual scale components
       meshRef.current.rotation.y += delta;
+      // Or using .set() method: meshRef.current.scale.set(1, 1 + Math.sin(state.clock.getElapsedTime()) * 0.2, 1);
     }
   });
 
   return (
     <>
-      {/* ONLY use allowed elements */}
-      <mesh ref={meshRef}>
+      {/* CORRECT: Setting scale as a prop */}
+      <mesh ref={meshRef} scale={[1, 1, 1]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="hotpink" />
       </mesh>
@@ -87,7 +111,8 @@ REQUIREMENTS:
 - Include appropriate materials, textures, and lighting
 - Ensure the scene has depth and visual interest
 - Use JSX syntax with React.Fragment <></> for multiple elements
-- Make sure all hooks are at the top level of the component`;
+- Make sure all hooks are at the top level of the component
+- If the prompt mentions background, skybox, or environment colors/styles, implement them as requested`;
 
     // Call OpenAI API with optimized parameters
     const completion = await openai.chat.completions.create({

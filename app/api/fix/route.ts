@@ -35,9 +35,21 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
     *   \`<Stars>\` and \`<Environment>\` from '@react-three/drei' - **ONLY USE WHEN SPECIFICALLY REQUESTED**\n    
     *   **ABSOLUTELY DO NOT USE:** \`<OrbitControls />\`, \`<PerspectiveCamera />\`, \`<Html>\`, \`<Text>\`, or any other components not explicitly listed above.
 
-4.  **Fixing Guidelines:**\n    
+4.  **THREE.js Object Manipulation:**\n
+    *   **CRITICAL: Never directly assign to scale, position, or rotation properties.**
+    *   If you see errors like "Cannot assign to read only property 'scale' of object '#<Mesh>'", fix them by:
+        * In JSX: Using \`<mesh scale={[x, y, z]}>\` instead of trying to assign directly
+        * In useFrame: Using \`meshRef.current.scale.set(x, y, z)\` or modifying individual components like \`meshRef.current.scale.x = value\`
+    *   CORRECT ways to modify scale:
+        * \`<mesh scale={[x, y, z]}>\` or \`<mesh scale-x={1.5}>\` in JSX
+        * \`meshRef.current.scale.set(x, y, z)\` or \`meshRef.current.scale.x = value\` in useFrame
+    *   WRONG ways that cause errors:
+        * \`meshRef.current.scale = [x, y, z]\` or \`meshRef.current.scale = new THREE.Vector3(x,y,z)\`
+        * Same applies for position and rotation properties
+
+5.  **Fixing Guidelines:**\n    
     *   Analyze the original code and the provided \`ERROR MESSAGE\`, \`ERROR TYPE\`, \`ERROR LOCATION\`, and \`STACK TRACE\`.\n
-    *   Common issues include: wrong imports, React not being imported, hooks called conditionally, missing ref initialization, etc.\n  
+    *   Common issues include: wrong imports, React not being imported, hooks called conditionally, missing ref initialization, assigning directly to read-only properties, etc.\n  
     *   The most common issue is importing useFrame from React instead of @react-three/fiber.\n
     *   Fix the specific error reported with minimal changes to the original code\'s intent.\n    
     *   Ensure the *entire* fixed code adheres to *all* the sandbox constraints listed above.\n     
@@ -65,8 +77,20 @@ function processErrorDetails(errorDetails: string): {
   if (errorMatch && errorMatch[1]) {
     errorMessage = errorMatch[1].trim();
     
+    // Handle read-only property errors (scale, position, rotation)
+    if (errorMessage.includes('Cannot assign to read only property')) {
+      errorType = 'ReadOnlyPropertyError';
+      
+      // Extract which property (scale, position, rotation)
+      const propertyMatch = errorMessage.match(/property '(\w+)'/);
+      const property = propertyMatch ? propertyMatch[1] : 'unknown';
+      
+      specificFixes.push(`Don't directly assign to ${property}, use ${property}.set() method instead`);
+      specificFixes.push(`Or set ${property} as a prop in JSX: <mesh ${property}={[x,y,z]}>`);
+      specificFixes.push(`Or modify individual components: ${property}.x = value`);
+    }
     // Handle Sandpack/iframe error formats
-    if (errorDetails.includes('sandbox') || errorDetails.includes('iframe')) {
+    else if (errorDetails.includes('sandbox') || errorDetails.includes('iframe')) {
       if (errorMessage.includes('Module not found') || errorMessage.includes('Cannot find module')) {
         errorType = 'ModuleNotFoundError';
         specificFixes.push(`Remove import statements - sandbox provides globals instead`);
@@ -75,7 +99,7 @@ function processErrorDetails(errorDetails: string): {
     }
     
     // Identify common error types
-    if (errorMessage.includes('Cannot read properties of null') || errorMessage.includes('Cannot read properties of undefined')) {
+    else if (errorMessage.includes('Cannot read properties of null') || errorMessage.includes('Cannot read properties of undefined')) {
       // Check what property was being accessed
       const propertyMatch = errorMessage.match(/reading ['"](.+?)['"]/);
       const property = propertyMatch ? propertyMatch[1] : 'unknown property';
