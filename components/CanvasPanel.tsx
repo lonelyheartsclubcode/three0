@@ -89,7 +89,8 @@ export default function App() {
       <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
         <Scene />
         <OrbitControls />
-        <Environment preset="sunset" background />
+        <Environment preset="sunset" />
+        <color attach="background" args={['#000000']} />
       </Canvas>
     </div>
   );
