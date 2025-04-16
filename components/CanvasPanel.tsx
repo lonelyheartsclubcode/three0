@@ -51,8 +51,34 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
     cleanedCode = cleanedCode.replace(/^```[a-z]*\n/, '').replace(/\n```$/, '').trim();
   }
 
+  // Check if the code contains direct imports from React
+  if (cleanedCode.includes('import React') || cleanedCode.includes('import {')) {
+    // Add additional imports for common React Three Fiber hooks if not already present
+    if (cleanedCode.includes('useFrame') && !cleanedCode.includes('@react-three/fiber')) {
+      // Insert import for useFrame from react-three/fiber
+      cleanedCode = cleanedCode.replace(
+        /import.*?;/, 
+        match => `${match}\nimport { useFrame } from '@react-three/fiber';`
+      );
+    }
+  } else {
+    // No imports found, add imports based on detected hooks
+    const imports = ['import React from "react";'];
+    
+    if (cleanedCode.includes('useFrame')) {
+      imports.push('import { useFrame } from "@react-three/fiber";');
+    }
+    
+    if (cleanedCode.includes('Stars') || cleanedCode.includes('Environment')) {
+      imports.push('import { Stars, Environment } from "@react-three/drei";');
+    }
+    
+    cleanedCode = imports.join('\n') + '\n\n' + cleanedCode;
+  }
+
   // Create the App.js file that will render the scene
   const appCode = `
+import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import Scene from './Scene';
@@ -69,25 +95,10 @@ export default function App() {
   );
 }`;
 
-  // Create the Scene.js file from the user's code
-  const sceneFile = cleanedCode || `
-export default function Scene() {
-  return (
-    <>
-      <mesh>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="orange" />
-      </mesh>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
-    </>
-  );
-}`;
-
   // Return the files object for Sandpack
   return {
     '/App.js': appCode,
-    '/Scene.js': sceneFile,
+    '/Scene.js': cleanedCode,
     '/index.js': `
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -126,20 +137,33 @@ interface CanvasPanelProps {
 export default function CanvasPanel({ sceneCode }: CanvasPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const { fixCode, isFixing } = useStore();
+  const [error, setError] = useState<Error | null>(null);
 
   // Prepare the code for the sandbox
   const sandpackFiles = prepareSceneCode(sceneCode);
 
   // Handle errors from the sandbox by sending them to the AI for fixing
   const handleSandpackError = (error: Error) => {
+    console.log("Sandpack error detected:", error.message);
+    setError(error);
+  };
+
+  // Handle manual fix button click
+  const handleFixClick = () => {
     if (sceneCode && error && fixCode) {
       const errorDetails = `
 Error: ${error.message}
 Stack: ${error.stack || ''}
       `;
       fixCode(sceneCode, errorDetails);
+      setError(null);
     }
   };
+
+  // Reset error when code changes
+  useEffect(() => {
+    setError(null);
+  }, [sceneCode]);
 
   return (
     <div className="flex flex-col h-full">
@@ -174,6 +198,23 @@ Stack: ${error.stack || ''}
                     </div>
                   </div>
                 )}
+                
+                {/* Error Message with Fix Button */}
+                {error && !isFixing && (
+                  <div className="absolute top-0 left-0 right-0 bg-red-600 text-white p-3 z-20 flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold">Error detected:</p>
+                      <p className="text-sm">{error.message}</p>
+                    </div>
+                    <button 
+                      className="bg-white text-red-600 px-4 py-2 rounded-md font-medium hover:bg-red-100 transition-colors"
+                      onClick={handleFixClick}
+                    >
+                      Fix with AI
+                    </button>
+                  </div>
+                )}
+                
                 <SandpackLayout>
                   <SandpackPreview 
                     showNavigator={false}
