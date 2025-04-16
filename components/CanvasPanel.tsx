@@ -41,7 +41,8 @@ const PRESET_R3F_DEPENDENCIES = {
   "react-dom": "^18.2.0",
   "@react-three/fiber": "^8.13.6",
   "@react-three/drei": "^9.80.0",
-  "three": "^0.154.0"
+  "three": "^0.154.0",
+  "maath": "^0.10.4"
 };
 
 // This wraps the user's scene code in the necessary boilerplate
@@ -59,20 +60,41 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
       // Insert import for useFrame from react-three/fiber
       cleanedCode = cleanedCode.replace(
         /import.*?;/, 
-        match => `${match}\nimport { useFrame } from '@react-three/fiber';`
+        match => `${match}\nimport { useFrame, useThree } from '@react-three/fiber';`
+      );
+    }
+    
+    // Add advanced drei imports if needed
+    if ((cleanedCode.includes('<Sky') || cleanedCode.includes('<Stars') || cleanedCode.includes('<Environment')) 
+        && !cleanedCode.includes('@react-three/drei')) {
+      cleanedCode = cleanedCode.replace(
+        /import.*?;/, 
+        match => `${match}\nimport { Environment, Sky, Stars } from '@react-three/drei';`
+      );
+    }
+    
+    // Add maath utilities if needed for complex animations
+    if (cleanedCode.includes('maath') && !cleanedCode.includes('maath/')) {
+      cleanedCode = cleanedCode.replace(
+        /import.*?;/, 
+        match => `${match}\nimport { randFloat, randFloatSpread, degToRad } from 'maath/random';\nimport { easing } from 'maath/easing';`
       );
     }
   } else {
-    // No imports found, add imports based on detected hooks
-    const imports = ['import React from "react";'];
+    // No imports found, add imports based on detected hooks and components
+    const imports = ['import React, { useRef, useState, useEffect, useMemo } from "react";'];
     
-    if (cleanedCode.includes('useFrame')) {
-      imports.push('import { useFrame } from "@react-three/fiber";');
-    }
+    imports.push('import { useFrame, useThree } from "@react-three/fiber";');
     
     // Only add these if explicitly used in the code
-    if (cleanedCode.includes('<Stars') || cleanedCode.includes('<Environment')) {
-      imports.push('import { Stars, Environment } from "@react-three/drei";');
+    if (cleanedCode.includes('<Stars') || cleanedCode.includes('<Sky') || cleanedCode.includes('<Environment')) {
+      imports.push('import { Stars, Sky, Environment } from "@react-three/drei";');
+    }
+    
+    // Add maath utilities if code suggests advanced math operations
+    if (cleanedCode.includes('randFloat') || cleanedCode.includes('degToRad') || cleanedCode.includes('easing')) {
+      imports.push('import { randFloat, randFloatSpread, degToRad } from "maath/random";');
+      imports.push('import { easing } from "maath/easing";');
     }
     
     cleanedCode = imports.join('\n') + '\n\n' + cleanedCode;
@@ -80,7 +102,7 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
 
   // Create the App.js file that will render the scene
   const appCode = `
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Scene from './Scene';
@@ -89,17 +111,43 @@ export default function App() {
   return (
     <div style={{ width: '100%', height: '100vh' }}>
       <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
-        <Scene />
-        <OrbitControls />
+        <Suspense fallback={null}>
+          <Scene />
+          <OrbitControls />
+        </Suspense>
       </Canvas>
     </div>
   );
 }`;
 
+  // Helper utilities for advanced Three.js operations
+  const utilsCode = `
+// Utility functions for Three.js operations
+import * as THREE from 'three';
+
+// Create a smooth oscillation between min and max with period in seconds
+export function oscillate(time, min, max, period = 1) {
+  const amplitude = (max - min) / 2;
+  const offset = min + amplitude;
+  return offset + amplitude * Math.sin(time * Math.PI * 2 / period);
+}
+
+// Linear interpolation
+export function lerp(start, end, t) {
+  return start * (1 - t) + end * t;
+}
+
+// Clamp value between min and max
+export function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+`;
+
   // Return the files object for Sandpack
   return {
     '/App.js': appCode,
     '/Scene.js': cleanedCode,
+    '/utils.js': utilsCode,
     '/index.js': `
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";

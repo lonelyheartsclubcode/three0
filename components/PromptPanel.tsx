@@ -18,7 +18,10 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
   const examplePrompts = [
     "Create a starfield with a rotating cube and a red point light.",
     "Make a forest scene with 5 trees and a moon in the sky.",
-    "Generate a solar system with planets orbiting the sun."
+    "Generate a solar system with planets orbiting the sun.",
+    "Create an animated abstract sculpture with morphing geometry and colorful materials.",
+    "Make a scene with rotating torus knots that change color over time.",
+    "Generate a particle system that simulates a galaxy with stars orbiting a center point."
   ];
 
   const handleExampleClick = (example: string) => {

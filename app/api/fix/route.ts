@@ -16,23 +16,23 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
     *   No other helper functions or variables should be defined outside the \`Scene\` component scope.\n    
     *   **IMPORTANT**: Include the following imports at the very top of your file:\n
         \`\`\`jsx
-        import React, { useRef, useState, useEffect } from 'react';
-        import { useFrame } from '@react-three/fiber';
+        import React, { useRef, useState, useEffect, useMemo } from 'react';
+        import { useFrame, useThree } from '@react-three/fiber';
         \`\`\`
-        Only add other imports if specifically needed (e.g., \`import { Stars, Environment } from '@react-three/drei';\` ONLY if these components are used).\n
+        Only add other imports if specifically needed (e.g., \`import { Stars, Sky, Environment } from '@react-three/drei';\` ONLY if these components are used).\n
     *   Do NOT include \`<Canvas>\` or setup code; only the scene contents within \`<></>\`.\n
 
 2.  **Available Hooks:**\n    
     *   \`useRef\`, \`useState\`, \`useEffect\`, \`useMemo\` from React
-    *   \`useFrame\` from '@react-three/fiber' (NOT from React) for animations
+    *   \`useFrame\`, \`useThree\` from '@react-three/fiber'
     *   Do NOT use other hooks that aren't explicitly mentioned here
 
 3.  **Available JSX Elements (Case-Sensitive):**\n    
-    *   \`<mesh>\`, \`<group>\`\n    
-    *   \`<boxGeometry>\`, \`<sphereGeometry>\`, \`<cylinderGeometry>\`, \`<coneGeometry>\`, \`<planeGeometry>\`\n    
-    *   \`<meshStandardMaterial>\`, \`<meshPhysicalMaterial>\`, \`<meshBasicMaterial>\`\n    
-    *   \`<ambientLight>\`, \`<pointLight>\`, \`<directionalLight>\`, \`<hemisphereLight>\`\n    
-    *   \`<Stars>\` and \`<Environment>\` from '@react-three/drei' - **ONLY USE WHEN SPECIFICALLY REQUESTED**\n    
+    *   \`<mesh>\`, \`<group>\`, \`<instancedMesh>\`\n    
+    *   \`<boxGeometry>\`, \`<sphereGeometry>\`, \`<cylinderGeometry>\`, \`<coneGeometry>\`, \`<planeGeometry>\`, \`<torusGeometry>\`, \`<torusKnotGeometry>\`, \`<tetrahedronGeometry>\`, \`<octahedronGeometry>\`, \`<icosahedronGeometry>\`, \`<dodecahedronGeometry>\`, \`<ringGeometry>\`, \`<circleGeometry>\`\n    
+    *   \`<meshStandardMaterial>\`, \`<meshPhysicalMaterial>\`, \`<meshBasicMaterial>\`, \`<meshNormalMaterial>\`, \`<meshDepthMaterial>\`, \`<meshMatcapMaterial>\`, \`<meshToonMaterial>\`, \`<meshLambertMaterial>\`, \`<meshPhongMaterial>\`\n    
+    *   \`<ambientLight>\`, \`<pointLight>\`, \`<directionalLight>\`, \`<hemisphereLight>\`, \`<spotLight>\`, \`<rectAreaLight>\`\n    
+    *   \`<Stars>\`, \`<Sky>\` and \`<Environment>\` from '@react-three/drei' - **ONLY USE WHEN SPECIFICALLY REQUESTED**\n    
     *   **ABSOLUTELY DO NOT USE:** \`<OrbitControls />\`, \`<PerspectiveCamera />\`, \`<Html>\`, \`<Text>\`, or any other components not explicitly listed above.
 
 4.  **THREE.js Object Manipulation:**\n
@@ -47,7 +47,19 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
         * \`meshRef.current.scale = [x, y, z]\` or \`meshRef.current.scale = new THREE.Vector3(x,y,z)\`
         * Same applies for position and rotation properties
 
-5.  **Fixing Guidelines:**\n    
+5.  **Advanced Animation Issues:**\n
+    *   For complex animations, ensure \`delta\` parameter is used in \`useFrame\` for frame-rate independence
+    *   Check for missing or improperly initialized refs before accessing in animations
+    *   Ensure performance by using proper group hierarchies for complex animations
+    *   Verify that all animations have proper conditional checks to prevent errors
+
+6.  **Material and Geometry Issues:**\n
+    *   Check for proper material parameter usage based on the material type
+    *   Ensure all geometries have appropriate args parameters
+    *   Verify that any custom material properties are compatible with the material type
+    *   For transparent materials, ensure both transparent={true} and proper opacity values
+
+7.  **Fixing Guidelines:**\n    
     *   Analyze the original code and the provided \`ERROR MESSAGE\`, \`ERROR TYPE\`, \`ERROR LOCATION\`, and \`STACK TRACE\`.\n
     *   Common issues include: wrong imports, React not being imported, hooks called conditionally, missing ref initialization, assigning directly to read-only properties, etc.\n  
     *   The most common issue is importing useFrame from React instead of @react-three/fiber.\n
@@ -131,6 +143,32 @@ function processErrorDetails(errorDetails: string): {
       specificFixes.push(`Use different texture sources`);
       specificFixes.push(`Add fallbacks for missing resources`);
     }
+    // Add new error types for advanced features
+    else if (errorMessage.includes('Unexpected token')) {
+      errorType = 'SyntaxError';
+      specificFixes.push(`Check for missing brackets or parentheses`);
+      specificFixes.push(`Ensure JSX syntax is correct`);
+    } else if (errorMessage.includes('too much recursion') || errorMessage.includes('Maximum call stack size exceeded')) {
+      errorType = 'RecursionError';
+      specificFixes.push(`Check useFrame or useEffect for infinite loops`);
+      specificFixes.push(`Ensure animations don't cause endless recursion`);
+    } else if (errorMessage.includes('Out of memory')) {
+      errorType = 'MemoryError';
+      specificFixes.push(`Reduce the number of objects or complexity`);
+      specificFixes.push(`Use instancedMesh for repeated geometries`);
+    } else if (errorMessage.includes('material') && errorMessage.includes('not compatible')) {
+      errorType = 'MaterialCompatibilityError';
+      specificFixes.push(`Ensure material type is compatible with mesh type`);
+      specificFixes.push(`Check for improper material property usage`);
+    } else if (errorMessage.includes('uniform') || errorMessage.includes('attribute')) {
+      errorType = 'ShaderError';
+      specificFixes.push(`Check shader uniform declarations and usage`);
+      specificFixes.push(`Ensure all required shader attributes are provided`);
+    } else if (errorMessage.includes('texture') || errorMessage.includes('map')) {
+      errorType = 'TextureError';
+      specificFixes.push(`Check texture loading and application to materials`);
+      specificFixes.push(`Use proper texture parameters`);
+    }
   }
 
   // Extract stack trace if available
@@ -149,6 +187,17 @@ function processErrorDetails(errorDetails: string): {
       if (!specificFixes.length) {
         specificFixes.push(`Check texture properties in meshStandardMaterial`);
         specificFixes.push(`Ensure all textures are properly handled with fallbacks`);
+      }
+    } 
+    // Check if error is in a specific component
+    else if (stackMatch[1].includes('Scene.js')) {
+      // Analyze common patterns in Scene.js errors
+      if (stackMatch[1].includes('useFrame')) {
+        specificFixes.push(`Check useFrame callback for errors in animation logic`);
+        specificFixes.push(`Ensure all refs are properly initialized before use`);
+      } else if (stackMatch[1].includes('useEffect')) {
+        specificFixes.push(`Check useEffect dependency array`);
+        specificFixes.push(`Ensure cleanup function is properly implemented`);
       }
     }
   }
