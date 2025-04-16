@@ -134,7 +134,7 @@ REQUIREMENTS:
 - If the prompt mentions background, skybox, or environment colors/styles, implement them as requested
 
 ADVANCED FEATURES (include if appropriate for the prompt):
-- Use complex geometries like torus knots, icosahedrons, or custom shapes
+- Use complex geometries like torus knots, icosahedrons, or custom shapes (do not overindex on these, be creative with your shapes)
 - Apply advanced materials with proper roughness and metalness values
 - Create smooth animations using delta time for frame-rate independence
 - Group related objects using <group> for coordinated animations
@@ -149,7 +149,7 @@ ADVANCED FEATURES (include if appropriate for the prompt):
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 1.03,
+      temperature: 1.13,
       max_tokens: 6000,
     });
 
