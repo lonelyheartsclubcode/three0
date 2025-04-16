@@ -204,8 +204,7 @@ interface CanvasPanelProps {
 }
 
 export default function CanvasPanel({ sceneCode }: CanvasPanelProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('preview');
-  const { fixCode, isFixing } = useStore();
+  const { activeTab, setActiveTab, fixCode, isFixing, isStreaming } = useStore();
   const [error, setError] = useState<Error | null>(null);
   const [mountKey, setMountKey] = useState(Date.now()); // Add a key to force remount when needed
 
@@ -275,6 +274,16 @@ Stack: ${error.stack || ''}
     }
   }, [activeTab]);
 
+  // Auto-switch to code tab when streaming begins, and back to preview when it ends
+  useEffect(() => {
+    if (isStreaming) {
+      setActiveTab('code');
+    } else if (!isStreaming && sceneCode) {
+      // Only switch to preview if we're done streaming and have code
+      setActiveTab('preview');
+    }
+  }, [isStreaming, sceneCode, setActiveTab]);
+
   if (!sceneCode) {
     return (
       <div className="flex flex-col h-full">
@@ -322,6 +331,18 @@ Stack: ${error.stack || ''}
               <div className="text-white text-center">
                 <div className="mb-2 text-xl">Fixing with AI...</div>
                 <div className="text-gray-400">Analyzing and correcting Three.js errors</div>
+              </div>
+            </div>
+          )}
+          
+          {isStreaming && (
+            <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white p-3 z-20 flex justify-between items-center">
+              <div className="font-semibold flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating code...
               </div>
             </div>
           )}

@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// Define message interface to match OpenAI API expectations
+interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
 // Initialize the OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -217,7 +223,7 @@ function processErrorDetails(errorDetails: string): {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { code, errorDetails } = body;
+    const { code, errorDetails, messages = [] } = body;
 
     if (!code || typeof code !== 'string') {
       return NextResponse.json(
@@ -228,6 +234,12 @@ export async function POST(request: Request) {
 
     // Process the error details to extract useful information
     const processedError = processErrorDetails(errorDetails);
+    
+    // Create the conversation history for the API if available
+    const conversationHistory: Message[] = messages.map((msg: any) => ({
+      role: msg.role as 'user' | 'assistant' | 'system',
+      content: msg.content
+    }));
     
     // Create a detailed prompt for fixing the code
     const userPrompt = `
@@ -251,13 +263,23 @@ Please fix the code to resolve this specific runtime error, keeping the sandbox 
 Return only the complete, fixed JSX code for the Scene component, ensuring it adheres to all sandbox limitations.
 `;
 
+    // Prepare the complete message list for the API call
+    const apiMessages: Message[] = [
+      { role: 'system', content: systemPrompt }
+    ];
+    
+    // Add previous conversation messages if they exist
+    if (conversationHistory.length > 0) {
+      apiMessages.push(...conversationHistory);
+    }
+    
+    // Add the current prompt
+    apiMessages.push({ role: 'user', content: userPrompt });
+
     // Call OpenAI API with optimized parameters
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+      messages: apiMessages,
       temperature: 0.2, // Lower temperature for more precise fixes
       max_tokens: 2000,
     });
