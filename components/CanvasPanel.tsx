@@ -6,7 +6,8 @@ import {
   SandpackPreview,
   SandpackLayout,
   SandpackCodeEditor,
-  useSandpack
+  useSandpack,
+  SandpackTheme
 } from '@codesandbox/sandpack-react';
 
 // Sandpack error listener component
@@ -69,7 +70,8 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
       imports.push('import { useFrame } from "@react-three/fiber";');
     }
     
-    if (cleanedCode.includes('Stars') || cleanedCode.includes('Environment')) {
+    // Only add these if explicitly used in the code
+    if (cleanedCode.includes('<Stars') || cleanedCode.includes('<Environment')) {
       imports.push('import { Stars, Environment } from "@react-three/drei";');
     }
     
@@ -80,7 +82,7 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
   const appCode = `
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import Scene from './Scene';
 
 export default function App() {
@@ -89,7 +91,6 @@ export default function App() {
       <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
         <Scene />
         <OrbitControls />
-        <Environment preset="sunset" />
         <color attach="background" args={['#000000']} />
       </Canvas>
     </div>
@@ -143,6 +144,39 @@ export default function CanvasPanel({ sceneCode }: CanvasPanelProps) {
 
   // Prepare the code for the sandbox
   const sandpackFiles = prepareSceneCode(sceneCode);
+
+  // Custom theme with high contrast text for better readability
+  const customTheme: SandpackTheme = {
+    colors: {
+      surface1: "#18181b", // zinc-900
+      surface2: "#27272a", // zinc-800
+      surface3: "#3f3f46", // zinc-700
+      clickable: "#a1a1aa", // zinc-400
+      base: "#f8fafc",     // slate-50 - much brighter text
+      disabled: "#52525b", // zinc-600
+      hover: "#d4d4d8",    // zinc-300
+      accent: "#3b82f6",   // blue-500
+      error: "#ef4444",    // red-500
+      errorSurface: "#7f1d1d", // red-900
+    },
+    syntax: {
+      plain: "#f8fafc",    // slate-50
+      comment: "#a1a1aa",  // zinc-400
+      keyword: "#93c5fd",  // blue-300
+      tag: "#c4b5fd",      // violet-300
+      punctuation: "#e4e4e7", // zinc-200
+      definition: "#93c5fd", // blue-300
+      property: "#a5b4fc",  // indigo-300
+      static: "#f472b6",    // pink-400
+      string: "#86efac"     // green-300
+    },
+    font: {
+      body: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      mono: "'JetBrains Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+      size: "14px",
+      lineHeight: "20px"
+    }
+  };
 
   // Handle errors from the sandbox by sending them to the AI for fixing
   const handleSandpackError = (error: Error) => {
@@ -213,6 +247,7 @@ Stack: ${error.stack || ''}
               "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap"
             ]
           }}
+          theme={customTheme}
           className="sp-wrapper"
         >
           {isFixing && (
