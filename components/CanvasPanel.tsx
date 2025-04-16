@@ -53,8 +53,23 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
     cleanedCode = cleanedCode.replace(/^```[a-z]*\n/, '').replace(/\n```$/, '').trim();
   }
 
+  // Check if THREE is used but not imported
+  const needsThreeImport = 
+    (cleanedCode.includes('THREE.') || 
+     cleanedCode.includes('new THREE.') ||
+     cleanedCode.includes('THREE.Math')) && 
+    !cleanedCode.includes('import * as THREE from');
+
   // Check if the code contains direct imports from React
   if (cleanedCode.includes('import React') || cleanedCode.includes('import {')) {
+    // Add THREE import if needed and not already present
+    if (needsThreeImport) {
+      cleanedCode = cleanedCode.replace(
+        /import.*?;/, 
+        match => `import * as THREE from 'three';\n${match}`
+      );
+    }
+    
     // Add additional imports for common React Three Fiber hooks if not already present
     if (cleanedCode.includes('useFrame') && !cleanedCode.includes('@react-three/fiber')) {
       // Insert import for useFrame from react-three/fiber
@@ -83,6 +98,11 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
   } else {
     // No imports found, add imports based on detected hooks and components
     const imports = ['import React, { useRef, useState, useEffect, useMemo } from "react";'];
+    
+    // Add THREE import if needed
+    if (needsThreeImport) {
+      imports.unshift('import * as THREE from "three";');
+    }
     
     imports.push('import { useFrame, useThree } from "@react-three/fiber";');
     

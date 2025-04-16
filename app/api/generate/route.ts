@@ -9,6 +9,7 @@ const openai = new OpenAI({
 // System prompt for generating a React Three Fiber scene
 const systemPrompt = `
 You are an expert 3D developer generating React Three Fiber (R3F) code that will run in a **VERY LIMITED, SANDBOXED ENVIRONMENT**.\nYour task is to convert natural language descriptions into a 3D scene component adhering to **STRICT CONSTRAINTS**.\n\n**CRITICAL CONSTRAINTS for the LIMITED ENVIRONMENT:**\n\n1.  **Code Structure:**\n    *   Output ONLY the JSX code for a single React function component.\n    *   The component MUST be named \`Scene\` and exported using \`export default function Scene() { ... }\`.\n    *   No other helper functions or variables should be defined outside the \`Scene\` component scope.\n    *   **IMPORTANT**: Include the following imports at the very top of your file:\n        \`\`\`jsx
+        import * as THREE from 'three';
         import React, { useRef, useState, useEffect, useMemo } from 'react';
         import { useFrame, useThree } from '@react-three/fiber';
         \`\`\`
@@ -44,7 +45,8 @@ You are an expert 3D developer generating React Three Fiber (R3F) code that will
     *   Do NOT include backgrounds unless the user explicitly requests them
 
 6.  **THREE.js Object Manipulation:**\n
-    *   **CRITICAL: Never directly assign to scale, position, or rotation properties.**
+    *   **CRITICAL: Always use THREE with imported namespace (import * as THREE from 'three')**
+    *   Use THREE for all Three.js objects: \`new THREE.Vector3()\`, \`THREE.MathUtils.degToRad()\`, etc.
     *   CORRECT ways to modify scale:
         * In JSX: \`<mesh scale={[x, y, z]}>\` or \`<mesh scale-x={1.5}>\`
         * In useFrame: \`meshRef.current.scale.set(x, y, z)\` or modify individual components like \`meshRef.current.scale.x = value\`
@@ -67,7 +69,7 @@ You are an expert 3D developer generating React Three Fiber (R3F) code that will
     *   Apply \`side={THREE.DoubleSide}\` when both sides of a material should be visible
 
 8.  **General Guidelines:**\n    
-    *   Assume \`THREE\` is available globally for things like \`new THREE.Vector3()\`. \n    
+    *   **IMPORTANT: Always use THREE as imported namespace (THREE.Vector3, etc), never assume it's globally available**
     *   Use basic materials and lights. Ensure meshes have materials.\n    
     *   Add subtle animations using \`useFrame\` where appropriate.\n    
     *   Focus on generating code that STRICTLY follows these constraints to avoid runtime errors in the sandbox.
@@ -75,6 +77,7 @@ You are an expert 3D developer generating React Three Fiber (R3F) code that will
     *   **IMPORTANT: ONLY use Environment or background colors when the user explicitly requests them in their prompt.**
 
 **VALID RESPONSE FORMAT (Code only, no explanations):**\n\\\`\\\`\\\`jsx
+import * as THREE from 'three';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -146,8 +149,8 @@ ADVANCED FEATURES (include if appropriate for the prompt):
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.7,
-      max_tokens: 2000,
+      temperature: 1.03,
+      max_tokens: 6000,
     });
 
     // Extract the generated code
