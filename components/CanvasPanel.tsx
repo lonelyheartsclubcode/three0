@@ -139,6 +139,7 @@ export default function CanvasPanel({ sceneCode }: CanvasPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const { fixCode, isFixing } = useStore();
   const [error, setError] = useState<Error | null>(null);
+  const [mountKey, setMountKey] = useState(Date.now()); // Add a key to force remount when needed
 
   // Prepare the code for the sandbox
   const sandpackFiles = prepareSceneCode(sceneCode);
@@ -166,6 +167,31 @@ Stack: ${error.stack || ''}
     setError(null);
   }, [sceneCode]);
 
+  // Force remount of the preview when switching back to it
+  useEffect(() => {
+    if (activeTab === 'preview') {
+      setMountKey(Date.now());
+    }
+  }, [activeTab]);
+
+  if (!sceneCode) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-none z-10">
+          <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
+        </div>
+        <div className="flex-grow relative overflow-hidden">
+          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-400">
+            {activeTab === 'preview' ? 
+              "Enter a prompt to generate a 3D scene" : 
+              "No code generated yet. Enter a prompt to generate a scene."
+            }
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-none z-10">
@@ -173,75 +199,65 @@ Stack: ${error.stack || ''}
       </div>
       
       <div className="flex-grow relative overflow-hidden">
-        {sceneCode ? (
-          <SandpackProvider
-            template="react"
-            files={sandpackFiles}
-            customSetup={{
-              dependencies: PRESET_R3F_DEPENDENCIES
-            }}
-            options={{
-              visibleFiles: ['/Scene.js'],
-              activeFile: '/Scene.js',
-              externalResources: [
-                "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap"
-              ]
-            }}
-            className="sp-wrapper"
-          >
-            {activeTab === 'preview' ? (
-              <>
-                {isFixing && (
-                  <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center z-30">
-                    <div className="text-white text-center">
-                      <div className="mb-2 text-xl">Fixing with AI...</div>
-                      <div className="text-gray-400">Analyzing and correcting Three.js errors</div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Error Message with Fix Button */}
-                {error && !isFixing && (
-                  <div className="absolute top-0 left-0 right-0 bg-red-600 text-white p-3 z-20 flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">Error detected:</p>
-                      <p className="text-sm">{error.message}</p>
-                    </div>
-                    <button 
-                      className="bg-white text-red-600 px-4 py-2 rounded-md font-medium hover:bg-red-100 transition-colors"
-                      onClick={handleFixClick}
-                    >
-                      Fix with AI
-                    </button>
-                  </div>
-                )}
-                
-                <SandpackLayout>
-                  <SandpackPreview 
-                    showNavigator={false}
-                    showRefreshButton={true}
-                    showOpenInCodeSandbox={false}
-                  />
-                  <ErrorListener onError={handleSandpackError} />
-                </SandpackLayout>
-              </>
-            ) : (
-              <SandpackCodeEditor
-                showLineNumbers
-                showInlineErrors
-                readOnly
-                wrapContent
+        <SandpackProvider
+          key={mountKey} // Force remount when switching back to preview
+          template="react"
+          files={sandpackFiles}
+          customSetup={{
+            dependencies: PRESET_R3F_DEPENDENCIES
+          }}
+          options={{
+            visibleFiles: ['/Scene.js'],
+            activeFile: '/Scene.js',
+            externalResources: [
+              "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap"
+            ]
+          }}
+          className="sp-wrapper"
+        >
+          {isFixing && (
+            <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center z-30">
+              <div className="text-white text-center">
+                <div className="mb-2 text-xl">Fixing with AI...</div>
+                <div className="text-gray-400">Analyzing and correcting Three.js errors</div>
+              </div>
+            </div>
+          )}
+          
+          {/* Error Message with Fix Button */}
+          {error && !isFixing && (
+            <div className="absolute top-0 left-0 right-0 bg-red-600 text-white p-3 z-20 flex justify-between items-center">
+              <div>
+                <p className="font-semibold">Error detected:</p>
+                <p className="text-sm">{error.message}</p>
+              </div>
+              <button 
+                className="bg-white text-red-600 px-4 py-2 rounded-md font-medium hover:bg-red-100 transition-colors"
+                onClick={handleFixClick}
+              >
+                Fix with AI
+              </button>
+            </div>
+          )}
+          
+          {activeTab === 'preview' ? (
+            <SandpackLayout>
+              <SandpackPreview 
+                showNavigator={false}
+                showRefreshButton={true}
+                showOpenInCodeSandbox={false}
               />
-            )}
-          </SandpackProvider>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-400">
-            {activeTab === 'preview' ? 
-              "Enter a prompt to generate a 3D scene" : 
-              "No code generated yet. Enter a prompt to generate a scene."
-            }
-          </div>
-        )}
+              <ErrorListener onError={handleSandpackError} />
+            </SandpackLayout>
+          ) : (
+            <SandpackCodeEditor
+              showLineNumbers
+              showInlineErrors
+              readOnly
+              wrapContent
+            />
+          )}
+        </SandpackProvider>
       </div>
     </div>
   );
