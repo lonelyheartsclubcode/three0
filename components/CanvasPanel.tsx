@@ -60,6 +60,13 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
      cleanedCode.includes('THREE.Math')) && 
     !cleanedCode.includes('import * as THREE from');
 
+  // Check for GLTF and skinned mesh usage
+  const needsGltfImport = 
+    (cleanedCode.includes('useGLTF') || 
+     cleanedCode.includes('<Clone') ||
+     cleanedCode.includes('<skinnedMesh')) && 
+    !cleanedCode.includes('@react-three/drei');
+
   // Check if the code contains direct imports from React
   if (cleanedCode.includes('import React') || cleanedCode.includes('import {')) {
     // Add THREE import if needed and not already present
@@ -88,6 +95,14 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
       );
     }
     
+    // Add GLTF and skinned mesh imports if needed
+    if (needsGltfImport) {
+      cleanedCode = cleanedCode.replace(
+        /import.*?;/, 
+        match => `${match}\nimport { useGLTF, Clone, SkeletonUtils } from '@react-three/drei';`
+      );
+    }
+    
     // Add maath utilities if needed for complex animations
     if (cleanedCode.includes('maath') && !cleanedCode.includes('maath/')) {
       cleanedCode = cleanedCode.replace(
@@ -109,6 +124,11 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
     // Only add these if explicitly used in the code
     if (cleanedCode.includes('<Stars') || cleanedCode.includes('<Sky') || cleanedCode.includes('<Environment')) {
       imports.push('import { Stars, Sky, Environment } from "@react-three/drei";');
+    }
+    
+    // Add GLTF and skinned mesh imports if needed
+    if (cleanedCode.includes('useGLTF') || cleanedCode.includes('<Clone') || cleanedCode.includes('<skinnedMesh')) {
+      imports.push('import { useGLTF, Clone, SkeletonUtils } from "@react-three/drei";');
     }
     
     // Add advanced geometry imports if needed
