@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import useStore from './store';
+import Logo3D from './Logo3D';
 
 interface PromptPanelProps {
   onGenerate: (prompt: string) => void;
@@ -8,7 +9,7 @@ interface PromptPanelProps {
 
 export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps) {
   const [prompt, setPrompt] = useState<string>('');
-  const { messages, addMessage, isFirstPrompt, setIsFirstPrompt, isStreaming } = useStore();
+  const { messages, addMessage, isFirstPrompt, setIsFirstPrompt, isStreaming, resetApp } = useStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom of chat when messages update
@@ -35,6 +36,10 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
       // Clear the input
       setPrompt('');
     }
+  };
+
+  const handleReset = () => {
+    resetApp();
   };
 
   const examplePrompts = [
@@ -74,8 +79,10 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
   );
   
   return (
-    <div className="flex flex-col h-full p-4 bg-zinc-900 text-white">
-      <h1 className="text-2xl font-bold mb-2">Three0</h1>
+    <div className="flex flex-col h-full p-4 pt-6 bg-zinc-900 text-white">
+      <div className="flex items-center mb-6">
+        <Logo3D onClick={handleReset} />
+      </div>
       <p className="mb-4 text-zinc-400">Generate 3D scenes from text prompts using React Three Fiber</p>
       
       {isFirstPrompt ? (

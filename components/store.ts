@@ -21,6 +21,7 @@ interface AppState {
   isStreaming: boolean;
   setIsStreaming: (isStreaming: boolean) => void;
   fixCode: (code: string, errorDetails: string) => Promise<void>;
+  resetApp: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -40,6 +41,12 @@ export const useStore = create<AppState>((set, get) => ({
   setIsFirstPrompt: (isFirst) => set({ isFirstPrompt: isFirst }),
   isStreaming: false,
   setIsStreaming: (isStreaming) => set({ isStreaming: isStreaming }),
+  resetApp: () => set({
+    sceneCode: '',
+    messages: [],
+    isFirstPrompt: true,
+    activeTab: 'preview',
+  }),
   fixCode: async (code: string, errorDetails: string) => {
     try {
       // Set the fixing state and store the error details
