@@ -16,7 +16,8 @@ export default function Page() {
     isStreaming, 
     setIsStreaming, 
     addMessage,
-    messages
+    messages,
+    sendChatMessage
   } = useStore();
 
   const handleGenerate = async (prompt: string) => {
@@ -76,15 +77,15 @@ export default function Page() {
           }
         }
         
-        // Add the AI response to the chat
-        addMessage({ role: 'assistant', content: 'Here\'s your scene! You can continue to refine it by sending more messages.' });
+        // When streaming is done, send a chat message to inform the user
+        await sendChatMessage("I've generated your scene based on your description. You can now ask me questions about it or request changes.");
       } else {
         // Fallback to regular JSON handling if streaming fails
         const data = await response.json();
         setSceneCode(data.code);
         
-        // Add the AI response to the chat
-        addMessage({ role: 'assistant', content: 'Here\'s your scene! You can continue to refine it by sending more messages.' });
+        // Add the AI response to the chat through the chat API
+        await sendChatMessage("I've generated your scene based on your description. You can now ask me questions about it or request changes.");
       }
     } catch (error: any) {
       console.error('Error generating scene:', error);

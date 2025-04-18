@@ -11,7 +11,18 @@ interface PromptPanelProps {
 
 export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps) {
   const [prompt, setPrompt] = useState<string>('');
-  const { messages, addMessage, isFirstPrompt, setIsFirstPrompt, isStreaming, resetApp } = useStore();
+  const { 
+    messages, 
+    addMessage, 
+    isFirstPrompt, 
+    setIsFirstPrompt, 
+    isStreaming, 
+    isChatLoading,
+    resetApp, 
+    sendChatMessage,
+    sceneCode
+  } = useStore();
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom of chat when messages update
@@ -23,21 +34,33 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (prompt.trim() && !isLoading && !isStreaming) {
+    if (!prompt.trim() || isLoading || isStreaming || isChatLoading) return;
+    
+    // If this is the first interaction, generate a scene
+    if (isFirstPrompt) {
       // Add user message to chat
       addMessage({ role: 'user', content: prompt });
-      
-      // If this is the first prompt, set isFirstPrompt to false
-      if (isFirstPrompt) {
-        setIsFirstPrompt(false);
-      }
+      setIsFirstPrompt(false);
       
       // Call the generation function
       onGenerate(prompt);
       
       // Clear the input
       setPrompt('');
+    } else {
+      // If we already have a scene, use the chat functionality instead
+      handleChatSubmit();
     }
+  };
+  
+  const handleChatSubmit = async () => {
+    if (!prompt.trim() || isChatLoading) return;
+    
+    // Send the chat message
+    await sendChatMessage(prompt);
+    
+    // Clear the input
+    setPrompt('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -85,6 +108,32 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
           </div>
         </div>
       ))}
+      {(isLoading || isStreaming) && (
+        <div className="mb-3 text-left">
+          <div className="inline-block rounded-lg px-4 py-2 bg-zinc-800 text-white">
+            <div className="flex items-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {isStreaming ? 'Generating code...' : 'Thinking...'}
+            </div>
+          </div>
+        </div>
+      )}
+      {isChatLoading && (
+        <div className="mb-3 text-left">
+          <div className="inline-block rounded-lg px-4 py-2 bg-zinc-800 text-white">
+            <div className="flex items-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Responding...
+            </div>
+          </div>
+        </div>
+      )}
       <div ref={messagesEndRef} />
     </div>
   );
@@ -154,7 +203,7 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
             <ul className="list-disc pl-4 space-y-1">
               <li>Be specific about colors, materials, and positioning</li>
               <li>Simpler scenes work better than very complex ones</li>
-              <li>The AI will fix errors automatically if they occur</li>
+              <li>You can chat with the AI about your scene after it's generated</li>
             </ul>
           </div>
         </>
@@ -164,27 +213,54 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
           <div className="flex flex-col h-full">
             <ChatMessages />
             
+            {sceneCode && (
+              <div className="mb-3 py-2 border-t border-zinc-800">
+                <button
+                  onClick={() => {
+                    // Get the fixCode function and lastError from store
+                    const { fixCode, lastError } = useStore.getState();
+                    if (fixCode && sceneCode) {
+                      // Use the fix function with current scene code
+                      const errorDetails = lastError || 'User manually requested a fix';
+                      fixCode(sceneCode, errorDetails);
+                    }
+                  }}
+                  className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors flex items-center justify-center"
+                  disabled={isLoading || isStreaming || isChatLoading}
+                >
+                  <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                  </svg>
+                  Fix Scene with AI
+                </button>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="mt-auto">
               <div className="relative">
                 <textarea
                   className="w-full p-3 pr-12 bg-zinc-800 text-white rounded-md border-zinc-700 border resize-none"
-                  placeholder="Refine your scene or add new elements..."
+                  placeholder={
+                    sceneCode 
+                      ? "Ask about your scene or request changes..." 
+                      : "Describe a 3D scene you'd like to create..."
+                  }
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={isLoading || isStreaming}
+                  disabled={isLoading || isStreaming || isChatLoading}
                   rows={3}
                 />
                 <button
                   type="submit"
-                  disabled={isLoading || !prompt.trim() || isStreaming}
+                  disabled={isLoading || !prompt.trim() || isStreaming || isChatLoading}
                   className={`absolute right-2 bottom-2 p-2 rounded-md ${
-                    isLoading || !prompt.trim() || isStreaming
+                    isLoading || !prompt.trim() || isStreaming || isChatLoading
                       ? 'text-zinc-600 cursor-not-allowed'
                       : 'text-blue-500 hover:text-blue-400'
                   }`}
                 >
-                  {isLoading ? (
+                  {isLoading || isStreaming || isChatLoading ? (
                     <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

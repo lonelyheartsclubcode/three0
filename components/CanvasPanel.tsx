@@ -261,7 +261,7 @@ interface CanvasPanelProps {
 }
 
 export default function CanvasPanel({ sceneCode }: CanvasPanelProps) {
-  const { activeTab, setActiveTab, fixCode, isFixing, isStreaming } = useStore();
+  const { activeTab, setActiveTab, fixCode, isFixing, isStreaming, sendChatMessage, setLastError } = useStore();
   const [error, setError] = useState<Error | null>(null);
   const [mountKey, setMountKey] = useState(Date.now()); // Add a key to force remount when needed
 
@@ -305,6 +305,12 @@ export default function CanvasPanel({ sceneCode }: CanvasPanelProps) {
   const handleSandpackError = (error: Error) => {
     console.log("Sandpack error detected:", error.message);
     setError(error);
+    
+    // Store the error in the global state
+    setLastError(`${error.message}\n${error.stack || ''}`);
+    
+    // Inform the chat about the error so users can ask about it
+    sendChatMessage(`I noticed an error in your scene: "${error.message}". You can ask me to fix it, or click the "Fix with AI" button.`);
   };
 
   // Handle manual fix button click
