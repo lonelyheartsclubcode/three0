@@ -203,7 +203,7 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
             <ul className="list-disc pl-4 space-y-1">
               <li>Be specific about colors, materials, and positioning</li>
               <li>Simpler scenes work better than very complex ones</li>
-              <li>You can chat with the AI about your scene after it's generated</li>
+              <li>You can chat with the AI about your scene after it&apos;s generated</li>
             </ul>
           </div>
         </>
