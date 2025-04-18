@@ -112,7 +112,7 @@ export const useStore = create<AppState>((set, get) => ({
         }));
 
         // Now use the fixCode function with the current code and error details
-        const errorDetails = lastError || 'User requested a fix: ' + content;
+        const errorDetails = lastError || "User requested a fix: " + content;
         const fixCode = get().fixCode;
         
         if (fixCode) {

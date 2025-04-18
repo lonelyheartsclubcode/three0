@@ -213,29 +213,6 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
           <div className="flex flex-col h-full">
             <ChatMessages />
             
-            {sceneCode && (
-              <div className="mb-3 py-2 border-t border-zinc-800">
-                <button
-                  onClick={() => {
-                    // Get the fixCode function and lastError from store
-                    const { fixCode, lastError } = useStore.getState();
-                    if (fixCode && sceneCode) {
-                      // Use the fix function with current scene code
-                      const errorDetails = lastError || 'User manually requested a fix';
-                      fixCode(sceneCode, errorDetails);
-                    }
-                  }}
-                  className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors flex items-center justify-center"
-                  disabled={isLoading || isStreaming || isChatLoading}
-                >
-                  <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                  </svg>
-                  Fix Scene with AI
-                </button>
-              </div>
-            )}
-            
             <form onSubmit={handleSubmit} className="mt-auto">
               <div className="relative">
                 <textarea
