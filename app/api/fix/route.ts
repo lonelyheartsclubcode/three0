@@ -327,10 +327,10 @@ Return only the complete, fixed JSX code for the Scene component, ensuring it ad
 
     // Call OpenAI API with optimized parameters
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+      model: process.env.OPENAI_MODEL || 'gpt-4.1',
       messages: apiMessages,
       temperature: 0.2, // Lower temperature for more precise fixes
-      max_tokens: 2000,
+      max_tokens: 6000,
     });
 
     // Extract the fixed code

@@ -7,7 +7,7 @@ Three0 is an AI-powered tool that generates 3D scenes using natural language. Th
 ## 🚀 Features
 
 - Convert natural language prompts to 3D scenes
-- Powered by OpenAI's GPT models (using gpt-4.1-mini)
+- Powered by OpenAI's GPT models (using gpt-4.1)
 - Real-time 3D preview with React Three Fiber
 - View the generated code with syntax highlighting
 - Self-correcting AI that can fix broken scenes automatically

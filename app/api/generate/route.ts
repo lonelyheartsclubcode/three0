@@ -1115,7 +1115,7 @@ ADVANCED FEATURES (include if appropriate for the prompt):
 
         // Call OpenAI API with streaming option
         const completion = await openai.chat.completions.create({
-          model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+          model: process.env.OPENAI_MODEL || 'gpt-4.1',
           messages: apiMessages,
           temperature: 1,
           max_tokens: 6000,
