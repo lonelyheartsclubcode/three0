@@ -27,6 +27,7 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
         import { useFrame, useThree } from '@react-three/fiber';
         \`\`\`
         Only add other imports if specifically needed (e.g., \`import { Stars, Sky, Environment } from '@react-three/drei';\` ONLY if these components are used).\n
+        For advanced geometries, include appropriate imports like: \`import { ParametricGeometry, LatheGeometry, TubeGeometry, ShapeGeometry, ExtrudeGeometry } from '@react-three/drei';\` ONLY if these components are used.\n
     *   Do NOT include \`<Canvas>\` or setup code; only the scene contents within \`<></>\`.\n
 
 2.  **Available Hooks:**\n    
@@ -36,7 +37,8 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
 
 3.  **Available JSX Elements (Case-Sensitive):**\n    
     *   \`<mesh>\`, \`<group>\`, \`<instancedMesh>\`\n    
-    *   \`<boxGeometry>\`, \`<sphereGeometry>\`, \`<cylinderGeometry>\`, \`<coneGeometry>\`, \`<planeGeometry>\`, \`<torusGeometry>\`, \`<torusKnotGeometry>\`, \`<tetrahedronGeometry>\`, \`<octahedronGeometry>\`, \`<icosahedronGeometry>\`, \`<dodecahedronGeometry>\`, \`<ringGeometry>\`, \`<circleGeometry>\`\n    
+    *   Basic Geometries: \`<boxGeometry>\`, \`<sphereGeometry>\`, \`<cylinderGeometry>\`, \`<coneGeometry>\`, \`<planeGeometry>\`, \`<torusGeometry>\`, \`<torusKnotGeometry>\`, \`<tetrahedronGeometry>\`, \`<octahedronGeometry>\`, \`<icosahedronGeometry>\`, \`<dodecahedronGeometry>\`, \`<ringGeometry>\`, \`<circleGeometry>\`\n    
+    *   Advanced Geometries: \`<parametricGeometry>\`, \`<latheGeometry>\`, \`<tubeGeometry>\`, \`<shapeGeometry>\`, \`<extrudeGeometry>\`, \`<capsuleGeometry>\`, \`<edgesGeometry>\`, \`<wireframeGeometry>\`\n    
     *   \`<meshStandardMaterial>\`, \`<meshPhysicalMaterial>\`, \`<meshBasicMaterial>\`, \`<meshNormalMaterial>\`, \`<meshDepthMaterial>\`, \`<meshMatcapMaterial>\`, \`<meshToonMaterial>\`, \`<meshLambertMaterial>\`, \`<meshPhongMaterial>\`\n    
     *   \`<ambientLight>\`, \`<pointLight>\`, \`<directionalLight>\`, \`<hemisphereLight>\`, \`<spotLight>\`, \`<rectAreaLight>\`\n    
     *   \`<Stars>\`, \`<Sky>\` and \`<Environment>\` from '@react-three/drei' - **ONLY USE WHEN SPECIFICALLY REQUESTED**\n    
@@ -56,19 +58,26 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
         * \`meshRef.current.scale = [x, y, z]\` or \`meshRef.current.scale = new THREE.Vector3(x,y,z)\`
         * Same applies for position and rotation properties
 
-5.  **Advanced Animation Issues:**\n
+5.  **Advanced Geometry Issues:**\n
+    *   For parametric geometry, ensure the function correctly sets the target Vector3
+    *   For extrude geometry, verify the shape and extrude settings are properly formatted
+    *   For shape geometry, check that the shape is a valid THREE.Shape instance
+    *   For lathe geometry, ensure points array contains valid Vector2 instances
+    *   For tube geometry, verify the path is a properly formatted THREE.Curve instance
+
+6.  **Advanced Animation Issues:**\n
     *   For complex animations, ensure \`delta\` parameter is used in \`useFrame\` for frame-rate independence
     *   Check for missing or improperly initialized refs before accessing in animations
     *   Ensure performance by using proper group hierarchies for complex animations
     *   Verify that all animations have proper conditional checks to prevent errors
 
-6.  **Material and Geometry Issues:**\n
+7.  **Material and Geometry Issues:**\n
     *   Check for proper material parameter usage based on the material type
     *   Ensure all geometries have appropriate args parameters
     *   Verify that any custom material properties are compatible with the material type
     *   For transparent materials, ensure both transparent={true} and proper opacity values
 
-7.  **Fixing Guidelines:**\n    
+8.  **Fixing Guidelines:**\n    
     *   Analyze the original code and the provided \`ERROR MESSAGE\`, \`ERROR TYPE\`, \`ERROR LOCATION\`, and \`STACK TRACE\`.\n
     *   Common issues include: missing THREE import, wrong imports, React not being imported, hooks called conditionally, missing ref initialization, assigning directly to read-only properties, etc.\n  
     *   The most common issue is importing useFrame from React instead of @react-three/fiber or missing THREE import.\n
@@ -177,6 +186,12 @@ function processErrorDetails(errorDetails: string): {
       errorType = 'TextureError';
       specificFixes.push(`Check texture loading and application to materials`);
       specificFixes.push(`Use proper texture parameters`);
+    } else if (errorMessage.includes('reading \'array\'') || (errorMessage.includes('Cannot read') && errorMessage.includes('array'))) {
+      errorType = 'GeometryAttributeError';
+      specificFixes.push(`Make sure the geometry is properly initialized before accessing its attributes`);
+      specificFixes.push(`Add more checks like: if (!geometryRef.current?.attributes?.position?.array) return;`);
+      specificFixes.push(`Use BufferGeometry.setAttribute() to create attributes when needed`);
+      specificFixes.push(`Consider using instancedMesh instead of modifying positions directly`);
     }
   }
 

@@ -40,7 +40,7 @@ const PRESET_R3F_DEPENDENCIES = {
   "react": "^18.2.0",
   "react-dom": "^18.2.0",
   "@react-three/fiber": "^8.13.6",
-  "@react-three/drei": "^9.80.0",
+  "@react-three/drei": "^9.88.0",
   "three": "^0.154.0",
   "maath": "^0.10.4"
 };
@@ -97,7 +97,7 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
     }
   } else {
     // No imports found, add imports based on detected hooks and components
-    const imports = ['import React, { useRef, useState, useEffect, useMemo } from "react";'];
+    const imports = ['import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";'];
     
     // Add THREE import if needed
     if (needsThreeImport) {
@@ -109,6 +109,20 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
     // Only add these if explicitly used in the code
     if (cleanedCode.includes('<Stars') || cleanedCode.includes('<Sky') || cleanedCode.includes('<Environment')) {
       imports.push('import { Stars, Sky, Environment } from "@react-three/drei";');
+    }
+    
+    // Add advanced geometry imports if needed
+    if (cleanedCode.includes('<parametricGeometry') || 
+        cleanedCode.includes('<latheGeometry') || 
+        cleanedCode.includes('<tubeGeometry') ||
+        cleanedCode.includes('<shapeGeometry') ||
+        cleanedCode.includes('<extrudeGeometry') ||
+        cleanedCode.includes('<capsuleGeometry') ||
+        cleanedCode.includes('<edgesGeometry') ||
+        cleanedCode.includes('<wireframeGeometry')) {
+      // NOTE: We no longer use these components directly
+      // The system prompt now advises using THREE constructors directly
+      console.warn("Advanced geometry components detected in JSX - verify code works correctly");
     }
     
     // Add maath utilities if code suggests advanced math operations
