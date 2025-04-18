@@ -64,6 +64,12 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
     *   For shape geometry, check that the shape is a valid THREE.Shape instance
     *   For lathe geometry, ensure points array contains valid Vector2 instances
     *   For tube geometry, verify the path is a properly formatted THREE.Curve instance
+    *   For instancedMesh, ensure proper initialization and matrix updates:
+        * Check if meshRef.current exists before accessing instanceMatrix
+        * Ensure dummy.updateMatrix() is called before setMatrixAt()
+        * Verify that instanceMatrix.needsUpdate = true is set after updates
+        * For animated particles, ensure proper bounds checking
+        * Use decompose() correctly when retrieving matrices
 
 6.  **Advanced Animation Issues:**\n
     *   For complex animations, ensure \`delta\` parameter is used in \`useFrame\` for frame-rate independence
@@ -76,6 +82,13 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
     *   Ensure all geometries have appropriate args parameters
     *   Verify that any custom material properties are compatible with the material type
     *   For transparent materials, ensure both transparent={true} and proper opacity values
+    *   For meshPhysicalMaterial water/glass effects, check for:
+        * Missing transparent={true} when using transmission
+        * Invalid ior values (must be between 1.0 and 2.333)
+        * Contradictions like high transmission with low opacity
+        * Missing side={THREE.DoubleSide} for thin transparent surfaces
+        * Incompatible property combinations (like high metalness with high transmission)
+        * For animated water surfaces, check proper handling of geometry attributes
 
 8.  **Fixing Guidelines:**\n    
     *   Analyze the original code and the provided \`ERROR MESSAGE\`, \`ERROR TYPE\`, \`ERROR LOCATION\`, and \`STACK TRACE\`.\n
@@ -85,7 +98,11 @@ You are an expert 3D developer specializing in debugging React Three Fiber (R3F)
     *   Ensure the *entire* fixed code adheres to *all* the sandbox constraints listed above.\n     
     *   **IMPORTANT: Never assume THREE is globally available. Always use the imported namespace.**\n     
 
-**RESPOND ONLY WITH THE COMPLETE FIXED JSX CODE for the \`Scene\` component.**\n`;
+**RESPOND ONLY WITH THE COMPLETE FIXED JSX CODE for the \`Scene\` component.**\n
+
+**Text Rendering Support:**\n
+- Ensure text rendering is supported during error fixing.
+`;
 
 // Process error details to extract useful information
 function processErrorDetails(errorDetails: string): {
@@ -192,6 +209,21 @@ function processErrorDetails(errorDetails: string): {
       specificFixes.push(`Add more checks like: if (!geometryRef.current?.attributes?.position?.array) return;`);
       specificFixes.push(`Use BufferGeometry.setAttribute() to create attributes when needed`);
       specificFixes.push(`Consider using instancedMesh instead of modifying positions directly`);
+    } else if (errorMessage.includes('instancedMesh') || errorMessage.includes('instanceMatrix')) {
+      errorType = 'InstancedMeshError';
+      specificFixes.push(`Check that instancedMesh is properly initialized with args={[null, null, COUNT]}`);
+      specificFixes.push(`Ensure dummy.updateMatrix() is called before setMatrixAt()`);
+      specificFixes.push(`Verify that instanceMatrix.needsUpdate = true is set after updates`);
+      specificFixes.push(`Add proper null checks before accessing instancedMesh properties`);
+      specificFixes.push(`Use decompose() correctly when retrieving matrices`);
+    } else if (errorMessage.includes('transmission') || errorMessage.includes('ior') || 
+              (errorMessage.includes('meshPhysical') && errorMessage.includes('Material'))) {
+      errorType = 'PhysicalMaterialError';
+      specificFixes.push(`Ensure transparent={true} is set when using transmission`);
+      specificFixes.push(`Check that ior value is between 1.0 and 2.333`);
+      specificFixes.push(`Verify that material properties are compatible (e.g., not high metalness with high transmission)`);
+      specificFixes.push(`For animated water surfaces, add proper null checks on geometry attributes`);
+      specificFixes.push(`Consider using side={THREE.DoubleSide} for thin transparent surfaces`);
     }
   }
 

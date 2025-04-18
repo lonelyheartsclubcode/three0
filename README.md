@@ -11,6 +11,9 @@ Three0 is an AI-powered tool that generates 3D scenes using natural language. Th
 - Self-correcting AI that can fix broken scenes automatically
 - Sandboxed code execution for safety and reliability
 - Simple and intuitive UI
+- **Advanced Material Rendering** for realistic water and glass using meshPhysicalMaterial
+- **Particle Systems** using instancedMesh for efficient rendering of many objects
+- **Animated Vertex Displacement** for realistic water surfaces
 
 ## 🔧 Tech Stack
 

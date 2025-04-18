@@ -42,7 +42,8 @@ const PRESET_R3F_DEPENDENCIES = {
   "@react-three/fiber": "^8.13.6",
   "@react-three/drei": "^9.88.0",
   "three": "^0.154.0",
-  "maath": "^0.10.4"
+  "maath": "^0.10.4",
+  "troika-three-text": "^0.47.2"
 };
 
 // This wraps the user's scene code in the necessary boilerplate
@@ -66,6 +67,13 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
      cleanedCode.includes('<Clone') ||
      cleanedCode.includes('<skinnedMesh')) && 
     !cleanedCode.includes('@react-three/drei');
+
+  // Check for Text component usage
+  const needsTextImport = 
+    (cleanedCode.includes('<Text') || 
+     cleanedCode.includes('Text from')) && 
+    !cleanedCode.includes('import { Text }') &&
+    !cleanedCode.includes('import {Text}');
 
   // Check if the code contains direct imports from React
   if (cleanedCode.includes('import React') || cleanedCode.includes('import {')) {
@@ -92,6 +100,14 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
       cleanedCode = cleanedCode.replace(
         /import.*?;/, 
         match => `${match}\nimport { Environment, Sky, Stars } from '@react-three/drei';`
+      );
+    }
+    
+    // Add Text component import if needed
+    if (needsTextImport) {
+      cleanedCode = cleanedCode.replace(
+        /import.*?;/, 
+        match => `${match}\nimport { Text } from '@react-three/drei';`
       );
     }
     
@@ -124,6 +140,11 @@ const prepareSceneCode = (sceneCode: string): Record<string, string> => {
     // Only add these if explicitly used in the code
     if (cleanedCode.includes('<Stars') || cleanedCode.includes('<Sky') || cleanedCode.includes('<Environment')) {
       imports.push('import { Stars, Sky, Environment } from "@react-three/drei";');
+    }
+    
+    // Add Text import if text rendering is detected
+    if (cleanedCode.includes('<Text')) {
+      imports.push('import { Text } from "@react-three/drei";');
     }
     
     // Add GLTF and skinned mesh imports if needed
