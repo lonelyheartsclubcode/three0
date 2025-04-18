@@ -40,6 +40,15 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Enter without Shift
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+    // Allow default behavior (new line) for Shift+Enter
+  };
+
   const handleReset = () => {
     resetApp();
   };
@@ -112,6 +121,7 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
               placeholder="Describe a 3D scene you'd like to create..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={isLoading}
               rows={4}
             />
@@ -161,6 +171,7 @@ export default function PromptPanel({ onGenerate, isLoading }: PromptPanelProps)
                   placeholder="Refine your scene or add new elements..."
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   disabled={isLoading || isStreaming}
                   rows={3}
                 />

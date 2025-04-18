@@ -1,5 +1,8 @@
 <!-- -->
 
+
+DEPLOYED AT: https://three0.vercel.app/
+
 # Three0 - AI-Powered 3D Scene Generator
 
 Three0 is an AI-powered tool that generates 3D scenes using natural language. The user types a prompt, and the system generates valid React Three Fiber code with a live-rendered preview.
