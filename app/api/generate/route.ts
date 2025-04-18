@@ -432,7 +432,7 @@ ADVANCED FEATURES (include if appropriate for the prompt):
         const completion = await openai.chat.completions.create({
           model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
           messages: apiMessages,
-          temperature: 1.13,
+          temperature: 1,
           max_tokens: 6000,
           stream: false, // We're managing the streaming manually
         });
